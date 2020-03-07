@@ -90,8 +90,8 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
 
             //Make sure the showConn function is triggered on initial load.
             showConn();
-            NotifyPropertyChanged("NbConnectionsAfter");
-            NotifyPropertyChanged("NbConnectionsBefore");
+            NotifyPropertyChanged(nameof(NbConnectionsAfter));
+            NotifyPropertyChanged(nameof(NbConnectionsBefore));
 
             /*ttip.SetToolTip(btnAlwaysAllow, Resources.MSG_ALLOW);
             ttip.SetToolTip(btnAlwaysBlock, Resources.MSG_BLOCK);
@@ -100,8 +100,8 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
 
         private void NotificationWindow_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            NotifyPropertyChanged("NbConnectionsAfter");
-            NotifyPropertyChanged("NbConnectionsBefore");
+            NotifyPropertyChanged(nameof(NbConnectionsAfter));
+            NotifyPropertyChanged(nameof(NbConnectionsBefore));
         }
 
         private void NotificationWindow_Initialized(object sender, EventArgs e)
@@ -149,8 +149,8 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
 
                 showConn();
 
-                NotifyPropertyChanged("NbConnectionsAfter");
-                NotifyPropertyChanged("NbConnectionsBefore");
+                NotifyPropertyChanged(nameof(NbConnectionsAfter));
+                NotifyPropertyChanged(nameof(NbConnectionsBefore));
             }
             else
             {
@@ -210,7 +210,7 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
 
             OptionsView.IsAppEnabled = !String.IsNullOrEmpty(activeConn.CurrentAppPkgId);
 
-            NotifyPropertyChanged("OptionsView");
+            NotifyPropertyChanged(nameof(OptionsView));
         }
 
         /// <summary>
@@ -275,7 +275,7 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             this.WindowState = WindowState.Minimized;
         }
 
-        public void lblService_Click(object sender, RoutedEventArgs e)
+        private void lblService_Click(object sender, RoutedEventArgs e) //FIXME: Not referenced (anymore!)
         {
             Process.Start("services.msc");
         }
@@ -285,7 +285,7 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             Process.Start(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WFN.exe"));
         }
 
-        private void ctxtCopy_Click(object sender, RoutedEventArgs e)
+        private void ctxtCopy_Click(object sender, RoutedEventArgs e) //FIXME: Not referenced (anymore!)
         {
             //var srccontrol = ((ContextMenuStrip)((ToolStripMenuItem)sender).Owner).SourceControl;
             //var copiedValue = (string)(srccontrol.Tag ?? String.Empty);
@@ -365,14 +365,11 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
                 if (activeConn.PossibleServices != null && activeConn.PossibleServices.Length > 0)
                 {
                     ServicesForm sf = new ServicesForm(activeConn);
-                    if ((bool)sf.ShowDialog())
-                    {
-                        services = sf.SelectedServices;
-                    }
-                    else
+                    if (!(bool)sf.ShowDialog())
                     {
                         return;
                     }
+                    services = sf.SelectedServices;
                 }
                 else
                 {
