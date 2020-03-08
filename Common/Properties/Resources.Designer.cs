@@ -19,7 +19,7 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -57,6 +57,51 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Click to open Notifier or press and hold left mouse button to move.
+        /// </summary>
+        public static string ActivityWindow_ClickableIcon_Tooltip {
+            get {
+                return ResourceManager.GetString("ActivityWindow_ClickableIcon_Tooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exit Notifier.
+        /// </summary>
+        public static string ActivityWindow_DiscardAndClose {
+            get {
+                return ResourceManager.GetString("ActivityWindow_DiscardAndClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hide this window.
+        /// </summary>
+        public static string ActivityWindow_HideThisWindow {
+            get {
+                return ResourceManager.GetString("ActivityWindow_HideThisWindow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open Console.
+        /// </summary>
+        public static string ActivityWindow_OpenConsole {
+            get {
+                return ResourceManager.GetString("ActivityWindow_OpenConsole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show Notifier.
+        /// </summary>
+        public static string ActivityWindow_ShowNotifier {
+            get {
+                return ResourceManager.GetString("ActivityWindow_ShowNotifier", resourceCulture);
             }
         }
         
@@ -201,6 +246,16 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
         public static string FW_TITLE {
             get {
                 return ResourceManager.GetString("FW_TITLE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot retrieve connection location for public ip - connection may be blocked by the firewall. 
+        ///You may need to create a rule for WFN in the Notifier to unblock it..
+        /// </summary>
+        public static string GeoConnection2_CannotRetrieveConnectionLocationForPublicIp {
+            get {
+                return ResourceManager.GetString("GeoConnection2_CannotRetrieveConnectionLocationForPublicIp", resourceCulture);
             }
         }
         
@@ -396,7 +451,88 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Custom Rule - {0}.
+        ///   Looks up a localized string similar to Exit Notifier.
+        /// </summary>
+        public static string NotifierTrayIcon_DiscardAndClose {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_DiscardAndClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Notifier stays hidden when minimized - click to open it..
+        /// </summary>
+        public static string NotifierTrayIcon_NotifierStaysHiddenWhenMinimizedClickToOpen {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_NotifierStaysHiddenWhenMinimizedClickToOpen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open Console.
+        /// </summary>
+        public static string NotifierTrayIcon_OpenConsole {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_OpenConsole", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open Notifier.
+        /// </summary>
+        public static string NotifierTrayIcon_ShowActivity_Notifier {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_ShowActivity_Notifier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show Activity Window.
+        /// </summary>
+        public static string NotifierTrayIcon_ShowActivityWindow {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_ShowActivityWindow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to WFN Notifier.
+        /// </summary>
+        public static string NotifierTrayIcon_ShowBalloonTip_WFNNotifier {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_ShowBalloonTip_WFNNotifier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show Notifier.
+        /// </summary>
+        public static string NotifierTrayIcon_ShowNotifier {
+            get {
+                return ResourceManager.GetString("NotifierTrayIcon_ShowNotifier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom Rule.
+        /// </summary>
+        public static string RULE_NAME_FILTER_PREFIX2 {
+            get {
+                return ResourceManager.GetString("RULE_NAME_FILTER_PREFIX2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [MY_RULE].
+        /// </summary>
+        public static string RULE_NAME_FILTER_PREFIX3 {
+            get {
+                return ResourceManager.GetString("RULE_NAME_FILTER_PREFIX3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [WFN] - {0}.
         /// </summary>
         public static string RULE_NAME_FORMAT {
             get {
@@ -405,22 +541,56 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Temporary rule.
-        /// </summary>
-        public static string RULE_TEMP {
-            get {
-                return ResourceManager.GetString("RULE_TEMP", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to A temporary rule has been created.
-        ///Path: {0}
-        ///Click on the shield icon to remove this rule..
+        ///   Looks up a localized string similar to Temporary rules have been created - click the shield icon to remove them..
         /// </summary>
         public static string RULE_TEMP_DESCRIPTION {
             get {
                 return ResourceManager.GetString("RULE_TEMP_DESCRIPTION", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Click icon to remove temporary rules.
+        /// </summary>
+        public static string RULE_TEMP_DESCRIPTION_SHORT {
+            get {
+                return ResourceManager.GetString("RULE_TEMP_DESCRIPTION_SHORT", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #.
+        /// </summary>
+        public static string RULE_TEMP_PREFIX {
+            get {
+                return ResourceManager.GetString("RULE_TEMP_PREFIX", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Temporary rule.
+        /// </summary>
+        public static string RULE_TEMP_SUFFIX {
+            get {
+                return ResourceManager.GetString("RULE_TEMP_SUFFIX", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Temporary rule.
+        /// </summary>
+        public static string RULE_TEMP_TITLE {
+            get {
+                return ResourceManager.GetString("RULE_TEMP_TITLE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to WSH -.
+        /// </summary>
+        public static string RULE_WSH_PREFIX {
+            get {
+                return ResourceManager.GetString("RULE_WSH_PREFIX", resourceCulture);
             }
         }
         
@@ -439,6 +609,51 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Properties {
         public static string SERVICES_NONE {
             get {
                 return ResourceManager.GetString("SERVICES_NONE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default actions (when no filtering rule matches).
+        /// </summary>
+        public static string Status_DefaultActionsWhenNoFilteringRuleMatches {
+            get {
+                return ResourceManager.GetString("Status_DefaultActionsWhenNoFilteringRuleMatches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to * The outgoing notifications are handled by WFN and cannot be applied to a specific profile. Selecting &apos;Block and prompt&apos; for at least one profile will enable notifications for all of them. It also means that you&apos;ll need to disable them for all profiles at once if you wish to..
+        /// </summary>
+        public static string Status_FooterRemark {
+            get {
+                return ResourceManager.GetString("Status_FooterRemark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to WFN is not a firewall and relies on the Windows embedded firewall when it comes to connections filtering. The table below shows the current Windows firewall status and allows you to manage the same directly..
+        /// </summary>
+        public static string Status_Heading1 {
+            get {
+                return ResourceManager.GetString("Status_Heading1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note: if you don&apos;t know what a profile is all about, the private one usually refers to your home network, while the public one is for public places (restaurant, hotels...). A domain profile is usually for workplaces..
+        /// </summary>
+        public static string Status_NoteAboutProfiles {
+            get {
+                return ResourceManager.GetString("Status_NoteAboutProfiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Windows firewall global status.
+        /// </summary>
+        public static string Status_WindowsFirewallGlobalStatus {
+            get {
+                return ResourceManager.GetString("Status_WindowsFirewallGlobalStatus", resourceCulture);
             }
         }
         

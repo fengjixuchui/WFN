@@ -60,7 +60,7 @@
             </Grid>
         </Border>
         <Grid>
-            <DataGrid AlternatingRowBackground="Gainsboro" BorderThickness="0" x:Name="gridRules" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ColumnWidth="*" GridLinesVisibility="None" SelectionMode="Single" IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column">
+            <DataGrid AlternatingRowBackground="Gainsboro" BorderThickness="0" x:Name="gridRules" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ColumnWidth="*" GridLinesVisibility="None" SelectionMode="Extended" IsReadOnly="True" AutoGenerateColumns="False" HeadersVisibility="Column">
                 <DataGrid.CellStyle>
                     <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                         <Setter Property="VerticalAlignment" Value="Center" />
@@ -68,12 +68,12 @@
                 </DataGrid.CellStyle>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name, Mode=OneTime}" SortDirection="Ascending"/>
-                    <DataGridTemplateColumn Header="Path" SortMemberPath="ApplicationName">
+                    <DataGridTemplateColumn Header="Path" SortMemberPath="ApplicationShortName">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Grid>
                                     <Image Source="{Binding Icon, Mode=OneTime}" Width="16" HorizontalAlignment="Left"/>
-                                    <Label Content="{Binding ApplicationName, Mode=OneWay}" Margin="20,0,0,0" />
+                                    <Label Content="{Binding ApplicationShortName, Mode=OneWay}" Margin="20,0,0,0" ToolTip="{Binding ApplicationName}" />
                                 </Grid>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

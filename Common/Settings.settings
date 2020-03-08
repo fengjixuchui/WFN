@@ -36,13 +36,37 @@
       <Value Profile="(Default)">900</Value>
     </Setting>
     <Setting Name="AccentColor" Roaming="true" Type="System.Windows.Media.SolidColorBrush" Scope="User">
-      <Value Profile="(Default)">#FFFF7F50</Value>
+      <Value Profile="(Default)">#FFC0C0C0</Value>
     </Setting>
     <Setting Name="EnableVerboseLogging" Roaming="true" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="AlwaysRunAs" Roaming="true" Type="System.Boolean" Scope="User">
+    <Setting Name="AlwaysRunAs" Roaming="true" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="EnableDnsResolver" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="FilterTcpOnlyEvents" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AuditPolEnableSuccessEvent" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="TargetInfoUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://bgpview.io/ip/{0}</Value>
+    </Setting>
+    <Setting Name="TargetPortUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://www.speedguide.net/port.php?port={0}</Value>
+    </Setting>
+    <Setting Name="ActivityWindow_Position" Type="System.Windows.Point" Scope="User">
+      <Value Profile="(Default)">0,0</Value>
+    </Setting>
+    <Setting Name="ActivityWindow_Shown" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActivityWindow_Orientation" Type="System.Windows.Controls.Orientation" Scope="User">
+      <Value Profile="(Default)">Horizontal</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -13,6 +14,12 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("2011-2018 Wokhan (https://github.com/wokhansoft/WFN)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+
+// log4net - look for a configuration file in the base dir
+[assembly: log4net.Config.XmlConfigurator(ConfigFile="WFN.config.log4net", Watch = true)]
+
+// CA1824 Merk assemblies default resource language
+[assembly: NeutralResourcesLanguage("en")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net;
 using System.Windows.Media;
 using Wokhan.WindowsFirewallNotifier.Common.Helpers;
 
@@ -39,13 +40,17 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.Helpers
         public List<int> LocalPortArray { get { return _localPortArray; } }
         public string LocalPort { get; set; }
         public string Target { get; set; }
-        public string TargetInfoUrl => $"http://whois.domaintools.com/{Target}";
+        //public string TargetInfoUrl => $"http://whois.domaintools.com/{Target}";  // uses captcha validation :(
+        //public string TargetInfoUrl => $"https://bgpview.io/ip/{Target}";
+        public string TargetInfoUrl => string.Format(Common.Settings.Default.TargetInfoUrl, Target);  // eg: $"https://bgpview.io/ip/{Target}"
         public string TargetPort { get; set; }
-        public string TargetPortUrl => $"https://www.speedguide.net/port.php?port={TargetPort}";
+        //public string TargetPortUrl => $"https://www.speedguide.net/port.php?port={TargetPort}";
+        public string TargetPortUrl => string.Format(Common.Settings.Default.TargetPortUrl, TargetPort); // eg: $"https://www.speedguide.net/port.php?port={TargetPort}"
+
         public int Protocol { get; set; }
         public string ProtocolAsString { get { return FirewallHelper.getProtocolAsString(Protocol); } }
 
-        private string _resolvedHost = null; //FIXME: Is this being used???
+        private string _resolvedHost = null;
         public string ResolvedHost
         {
             get { return _resolvedHost; }
@@ -61,6 +66,7 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.Helpers
             get { return _tentativesCounter; }
             set { _tentativesCounter = value; NotifyPropertyChanged(nameof(TentativesCounter)); }
         }
+
     }
 
 }

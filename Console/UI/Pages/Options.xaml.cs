@@ -10,6 +10,7 @@ using Wokhan.WindowsFirewallNotifier.Common;
 using System.Linq;
 using Wokhan.WindowsFirewallNotifier.Common.Helpers;
 using System.Windows.Threading;
+using Wokhan.WindowsFirewallNotifier.Console.Helpers;
 
 namespace Wokhan.WindowsFirewallNotifier.Console.UI.Pages
 {
@@ -27,6 +28,10 @@ namespace Wokhan.WindowsFirewallNotifier.Console.UI.Pages
             set { Application.Current.Resources["AccentColorBrush"] = value; Settings.Default.AccentColor = value; }
         }
 
+        public string SharedConfigurationPath { get; set; } = CustomSettingsProvider.SharedConfigurationPath;
+        public string UserConfigurationPath { get; set; } = CustomSettingsProvider.UserConfigurationPath;
+        public string UserLocalConfigurationPath { get; set; } = CustomSettingsProvider.UserLocalConfigurationPath;
+
         public Options()
         {
             InitializeComponent();
@@ -34,7 +39,9 @@ namespace Wokhan.WindowsFirewallNotifier.Console.UI.Pages
 
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
+            Settings.Default.FirstRun = true;   // reset the flag to log os info again once
             Settings.Default.Save();
+            InstallHelper.SetAuditPolConnection(enableSuccess: Settings.Default.AuditPolEnableSuccessEvent, enableFailure:true);
         }
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
@@ -54,7 +61,30 @@ namespace Wokhan.WindowsFirewallNotifier.Console.UI.Pages
 
         private void txtCurrentLogPath_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            Process.Start("explorer.exe", LogHelper.CurrentLogsPath);
+            ProcessHelper.StartShellExecutable("explorer.exe", LogHelper.CurrentLogsPath, true);
+        }
+
+        private void btnResetDefault_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Default.Reset();
+            Settings.Default.FirstRun = true;
+            Settings.Default.EnableVerboseLogging = false;
+            //Settings.Default.AlwaysRunAs = true;
+        }
+
+        private void txtUserLocalConfigurationPath_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ProcessHelper.StartShellExecutable("explorer.exe", UserLocalConfigurationPath, true);
+        }
+
+        private void txtUserConfigurationPath_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ProcessHelper.StartShellExecutable("explorer.exe", UserConfigurationPath, true);
+        }
+
+        private void txtSharedConfigurationPath_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            ProcessHelper.StartShellExecutable("explorer.exe", SharedConfigurationPath, true);
         }
     }
 }

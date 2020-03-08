@@ -16,7 +16,7 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
         //Note: .NET framework has no easy way to get the types right, so our cache will be filled with strings.
         private Dictionary<string, object> _valuesCache = new Dictionary<string, object>();
 
-        private static readonly string SectionName = "Wokhan.WindowsFirewallNotifier.Configuration";
+        private static readonly string SectionName = "Wokhan.WindowsFirewallNotifier.Common.Settings";
         private static readonly string applicationSectionName = "applicationSettings";
         private static readonly string userSectionName = "userSettings";
         public static readonly string SharedConfigurationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WFN.config");
@@ -37,7 +37,7 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
 
             Configuration cfg = null;
 
-            ExeConfigurationFileMap configMap = new ExeConfigurationFileMap();
+            var configMap = new ExeConfigurationFileMap();
             configMap.ExeConfigFilename = SharedConfigurationPath;
             if (!WindowsIdentity.GetCurrent().IsSystem)
             {
@@ -61,13 +61,20 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
                 }
             }
 
-            ClientSettingsSection appSettings = GetApplicationSettingsSection(cfg);
-            var sets = collection.Cast<SettingsProperty>().Where(x => !IsUserSetting(x));
-            ExtractSettings(sets, r, appSettings);
+            try
+            {
+                ClientSettingsSection appSettings = GetApplicationSettingsSection(cfg);
+                var sets = collection.Cast<SettingsProperty>().Where(x => !IsUserSetting(x));
+                ExtractSettings(sets, r, appSettings);
 
-            ClientSettingsSection userInitialSettings = GetUserSettingsSection(cfg);
-            sets = collection.Cast<SettingsProperty>().Where(x => IsUserSetting(x));
-            ExtractSettings(sets, r, userInitialSettings);
+                ClientSettingsSection userInitialSettings = GetUserSettingsSection(cfg);
+                sets = collection.Cast<SettingsProperty>().Where(x => IsUserSetting(x));
+                ExtractSettings(sets, r, userInitialSettings);
+            }
+            catch ( Exception e )
+            {
+                Console.WriteLine("Error loading config");
+            }
 
             return r;
         }
@@ -80,10 +87,9 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
             }
             foreach (var s in sets)
             {
-                var value = newValues.Settings.Get(s.Name).Value.ValueXml.FirstChild.Value;
-
+                // need to provide default value for missing key sections in case something is not there
+                var value = newValues.Settings.Get(s.Name)?.Value?.ValueXml?.FirstChild?.Value ?? s.DefaultValue;
                 _valuesCache[s.Name] = value;
-
                 r.Remove(s.Name);
                 r.Add(new SettingsPropertyValue(new SettingsProperty(s)) { IsDirty = false, SerializedValue = value });
             }
@@ -93,7 +99,7 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
         {
             try
             {
-                return (ClientSettingsSection)cfg.GetSectionGroup(applicationSectionName).Sections[SectionName];
+                return (ClientSettingsSection)cfg.GetSectionGroup(applicationSectionName)?.Sections[SectionName];
             }
             catch (ConfigurationErrorsException e)
             {
@@ -110,7 +116,7 @@ namespace Wokhan.WindowsFirewallNotifier.Common.Helpers
         {
             try
             {
-                return (ClientSettingsSection)cfg.GetSectionGroup(userSectionName).Sections[SectionName];
+                return (ClientSettingsSection)cfg.GetSectionGroup(userSectionName)?.Sections[SectionName];
             }
             catch (ConfigurationErrorsException e)
             {

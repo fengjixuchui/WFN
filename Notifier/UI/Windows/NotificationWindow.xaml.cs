@@ -11,17 +11,28 @@ using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using Wokhan.WindowsFirewallNotifier.Common;
 using Wokhan.WindowsFirewallNotifier.Common.Helpers;
-using Wokhan.WindowsFirewallNotifier.Common.Properties;
 using Wokhan.WindowsFirewallNotifier.Notifier.Helpers;
+using WinForms = System.Windows.Forms;
+using Messages = Wokhan.WindowsFirewallNotifier.Common.Properties.Resources;
+using System.Drawing;
 
 namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
 {
-    /// <summary>
-    /// Interaction logic for NotificationWindow.xaml
-    /// </summary>
-    public partial class NotificationWindow : Window, INotifyPropertyChanged
+    /**
+    * Interaction logic for NotificationWindow.xaml
+    * 
+    * authors: 
+    *   harrwiss
+    *   wokhan
+    */
+    public partial class NotificationWindow : System.Windows.Window, INotifyPropertyChanged
     {
+        private const string WFN_PROCESS_NAME = "WFN"; // TODO: move to settings?
+        private const string WFN_EXE = "WFN.exe";
+
         private bool isDetailsExpanded;
+
+        private readonly NotifierTrayIcon notifierTrayIcon;
 
         public double ExpectedTop
         {
@@ -33,8 +44,13 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             get { return SystemParameters.WorkArea.Width - this.ActualWidth; }
         }
 
-        public int NbConnectionsAfter { get { return lstConnections != null ? lstConnections.Items.Count - lstConnections.SelectedIndex - 1 : 0; } }
-        public int NbConnectionsBefore { get { return lstConnections != null ? lstConnections.SelectedIndex : 0; } }
+        public double ExpectedWidth
+        {
+            get { return SystemParameters.WorkArea.Width - this.ExpectedLeft; }
+        }
+
+        public int NbConnectionsAfter { get { return lstConnections != null && lstConnections.SelectedIndex >= 0 ? lstConnections.Items.Count - lstConnections.SelectedIndex - 1 : 0; } }
+        public int NbConnectionsBefore { get { return lstConnections != null && lstConnections.SelectedIndex >= 0 ? lstConnections.SelectedIndex : 0; } }
 
         public class OptionsViewClass
         {
@@ -52,22 +68,14 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             public string SingleServiceName { get; set; }
         }
 
-        private OptionsViewClass _optionsView = new OptionsViewClass();
-        public OptionsViewClass OptionsView { get { return _optionsView; } }
+        public OptionsViewClass OptionsView { get; } = new OptionsViewClass();
 
-
-        public string CurrentProfile { get { return FirewallHelper.GetCurrentProfileAsText(); } }
-
-
-        //private ToolTip ttip = new ToolTip();
+        public static string CurrentProfile { get { return FirewallHelper.GetCurrentProfileAsText(); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged(string propertyName)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         /// <summary>
@@ -77,7 +85,11 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         {
             InitializeComponent();
 
-            this.isDetailsExpanded = expand.IsExpanded;
+            notifierTrayIcon = NotifierTrayIcon.Init(this);
+
+            isDetailsExpanded = expand.IsExpanded;
+            tglSkip.IsChecked = false;
+            ChangeAdditionalButtonsVisibility((bool)tglSkip.IsChecked);
 
             if (Settings.Default.AccentColor != null)
             {
@@ -88,20 +100,87 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             ((ObservableCollection<CurrentConn>)lstConnections.ItemsSource).CollectionChanged += NotificationWindow_CollectionChanged;
             lstConnections.SelectedIndex = 0;
 
-            //Make sure the showConn function is triggered on initial load.
-            showConn();
+            PropertyChanged += (sender, args) =>
+            {
+                if (args.PropertyName == nameof(NbConnectionsAfter))
+                {
+                    CheckPendingConnections();
+                }
+            };
+
+            // Overlay handling and re-calculate ExpectedTop
+            Activated += (sender, args) => { CheckPendingConnections(); };
+            SizeChanged += (sender, args) => { Top = ExpectedTop; };
+
             NotifyPropertyChanged(nameof(NbConnectionsAfter));
             NotifyPropertyChanged(nameof(NbConnectionsBefore));
-
-            /*ttip.SetToolTip(btnAlwaysAllow, Resources.MSG_ALLOW);
-            ttip.SetToolTip(btnAlwaysBlock, Resources.MSG_BLOCK);
-            */
         }
 
-        private void NotificationWindow_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void CheckPendingConnections()
         {
-            NotifyPropertyChanged(nameof(NbConnectionsAfter));
-            NotifyPropertyChanged(nameof(NbConnectionsBefore));
+            void showOverlay(bool shouldShow)
+            {
+                if (shouldShow && !OverlayGrid.IsVisible)
+                {
+                    OverlayGrid.Visibility = Visibility.Visible;
+                    MainGrid.Visibility = Visibility.Collapsed;
+                    logLocation($"showOverlay: {shouldShow}");
+                }
+                else if (!shouldShow && OverlayGrid.IsVisible)
+                {
+                    MainGrid.Visibility = Visibility.Visible;
+                    OverlayGrid.Visibility = Visibility.Collapsed;
+                    logLocation($"showOverlay: {shouldShow}");
+                }
+            }
+            if (NbConnectionsAfter > 0)
+            {
+                showOverlay(false);
+            }
+            else
+            {
+                showOverlay(true);
+            }
+        }
+
+        private void logLocation(string method)
+        {
+            System.Console.WriteLine($"{method} Top: {Top} ExpTop: {ExpectedTop} Height: {Height} ActualHeight: {ActualHeight}");
+        }
+
+        public new void Show()
+        {
+            System.Console.WriteLine($"Show Top: {Top} ExpTop: {ExpectedTop}");
+
+            base.Show();
+
+            //Top = ExpectedTop;
+        }
+
+        public void RestoreWindowState()
+        {
+            Show(); // required to trigger state changed events
+            WindowState = WindowState.Normal;
+        }
+
+        internal void HideWindowState()
+        {
+            Hide();
+            ShowInTaskbar = false;
+            WindowState = WindowState.Minimized;
+            notifierTrayIcon.Show();
+        }
+
+        private void NotificationWindow_StateChanged(object sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                //
+            }
+            else
+            {
+                //ShowInTaskbar = false;
+            }
         }
 
         private void NotificationWindow_Initialized(object sender, EventArgs e)
@@ -123,19 +202,45 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             this.Top = ExpectedTop;
             this.Left = ExpectedLeft;
 
+            StartAnimation();
+        }
+
+        private void NotificationWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            StopAnimation();
+            this.Focus();  //  focus the element
+        }
+
+        private void StartAnimation()
+        {
             if (Settings.Default.UseAnimation)
             {
                 ((Storyboard)this.Resources["animate"]).Begin(Main, true);
             }
+
         }
 
-        private void NotificationWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        private void StopAnimation()
         {
             if (Settings.Default.UseAnimation)
             {
                 ((Storyboard)this.Resources["animate"]).Stop(Main);
             }
             this.Opacity = 1.0; //@
+        }
+
+        private void NotificationWindow_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (lstConnections.Items.Count > 0)
+            {
+                if (lstConnections.SelectedItem == null)
+                {
+                    lstConnections.SelectedIndex = 0;
+                }
+
+            }
+            NotifyPropertyChanged(nameof(NbConnectionsAfter));
+            NotifyPropertyChanged(nameof(NbConnectionsBefore));
         }
 
         private void LstConnections_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -146,22 +251,21 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
                 {
                     lstConnections.SelectedIndex = 0;
                 }
-
                 showConn();
-
-                NotifyPropertyChanged(nameof(NbConnectionsAfter));
-                NotifyPropertyChanged(nameof(NbConnectionsBefore));
             }
             else
             {
-                this.Close();
+                // HideWindowState();
             }
+            //Console.WriteLine($"-> lstConnections.SelectedIndex={lstConnections.SelectedIndex}");
+            NotifyPropertyChanged(nameof(NbConnectionsAfter));
+            NotifyPropertyChanged(nameof(NbConnectionsBefore));
         }
 
         /// <summary>
         /// Updates all controls contents according to the currently selected blocked connection
         /// </summary>
-        private void showConn()
+        public void showConn()
         {
             var activeConn = (CurrentConn)lstConnections.SelectedItem;
 
@@ -174,9 +278,12 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
                 //On by default. Also: needed to be able to specify port!
                 OptionsView.IsProtocolChecked = true;
             }
+
+            // By default one would usually make a rule on the target ip/port for outgoing connections
+            OptionsView.IsLocalPortChecked = false;
             OptionsView.IsTargetPortEnabled = FirewallHelper.IsIPProtocol(activeConn.Protocol);
             OptionsView.IsTargetPortChecked = FirewallHelper.IsIPProtocol(activeConn.Protocol);
-            OptionsView.IsLocalPortChecked = (activeConn.LocalPortArray.Count == 1 && activeConn.LocalPortArray[0] != 0 && activeConn.LocalPortArray[0] < IPHelper.GetMaxUserPort());
+            OptionsView.IsTargetIPChecked = FirewallHelper.IsIPProtocol(activeConn.Protocol);
 
             if (!String.IsNullOrEmpty(activeConn.CurrentService))
             {
@@ -220,12 +327,12 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         /// <param name="e"></param>
         private void btnAllow_Click(object sender, RoutedEventArgs e)
         {
-            createRule(true, false);
+            createRule(doAllow: true, isTemp: false);
         }
 
         private void btnAllowTemp_Click(object sender, RoutedEventArgs e)
         {
-            createRule(true, true);
+            createRule(doAllow: true, isTemp: true);
         }
 
         /// <summary>
@@ -235,12 +342,12 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         /// <param name="e"></param>
         private void btnIgnore_Click(object sender, RoutedEventArgs e) //FIXME: Naming?
         {
-            createRule(false, false);
+            createRule(doAllow: false, isTemp: false);
         }
 
         private void btnBlockTemp_Click(object sender, RoutedEventArgs e)
         {
-            createRule(false, true);
+            createRule(doAllow: false, isTemp: true);
         }
 
         /// <summary>
@@ -250,8 +357,12 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         /// <param name="e"></param>
         private void btnNext_Click(object sender, RoutedEventArgs e)
         {
-            lstConnections.SelectedIndex++;
-            lstConnections.ScrollIntoView(lstConnections.SelectedItem);
+            lstConnections.SelectedIndex = Math.Min(lstConnections.Items.Count - 1, lstConnections.SelectedIndex + 1);
+            if (lstConnections.SelectedItem != null)
+            {
+                lstConnections.ScrollIntoView(lstConnections.SelectedItem);
+            }
+            //Console.WriteLine($"Next_click: SelectedIndex={lstConnections.SelectedIndex}");
         }
 
         /// <summary>
@@ -261,8 +372,12 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         /// <param name="e"></param>
         private void btnPrev_Click(object sender, RoutedEventArgs e)
         {
-            lstConnections.SelectedIndex--;
-            lstConnections.ScrollIntoView(lstConnections.SelectedItem);
+            lstConnections.SelectedIndex = lstConnections.SelectedIndex >= 0 ? lstConnections.SelectedIndex - 1 : -1;
+            if (lstConnections.SelectedItem != null)
+            {
+                lstConnections.ScrollIntoView(lstConnections.SelectedItem);
+            }
+            //Console.WriteLine($"Prev_click: SelectedIndex={lstConnections.SelectedIndex}");
         }
 
         /// <summary>
@@ -272,17 +387,29 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         /// <param name="e"></param>
         private void btnMin_Click(object sender, RoutedEventArgs e)
         {
-            this.WindowState = WindowState.Minimized;
+            HideWindowState();
         }
 
         private void lblService_Click(object sender, RoutedEventArgs e) //FIXME: Not referenced (anymore!)
         {
-            Process.Start("services.msc");
+            ProcessHelper.StartShellExecutable("services.msc", null, true);
         }
 
         private void btnOptions_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WFN.exe"));
+            ShowConsole();
+        }
+
+        public void ShowConsole()
+        {
+            if (Process.GetProcessesByName(WFN_PROCESS_NAME).Length == 0)
+            {
+                Process.Start(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, WFN_EXE));
+            }
+            else
+            {
+                ProcessHelper.RestoreProcessWindowState(WFN_PROCESS_NAME);
+            }
         }
 
         private void ctxtCopy_Click(object sender, RoutedEventArgs e) //FIXME: Not referenced (anymore!)
@@ -296,12 +423,20 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         private void btnSkip_Click(object sender, RoutedEventArgs e)
         {
             var tmpSelectedItem = (CurrentConn)lstConnections.SelectedItem;
-            lstConnections.SelectedIndex -= 1;
-            ((App)Application.Current).Connections.Remove(tmpSelectedItem);
+            if (tmpSelectedItem != null && lstConnections.Items.Count > 0)
+            {
+                lstConnections.SelectedIndex = Math.Max(-1, lstConnections.SelectedIndex);
+                ((App)System.Windows.Application.Current).Connections.Remove(tmpSelectedItem);
+            }
+            //Console.WriteLine($"Skip_click: SelectedIndex={lstConnections.SelectedIndex}");
         }
 
         private void btnSkipProgram_Click(object sender, RoutedEventArgs e)
         {
+            if (lstConnections.SelectedItem == null)
+            {
+                return;
+            }
             String skipPath = ((CurrentConn)lstConnections.SelectedItem).CurrentPath;
             List<CurrentConn> toRemove = new List<CurrentConn>(); //Can't remove while iterating.
             foreach (var connection in lstConnections.Items)
@@ -315,24 +450,36 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             {
                 if (lstConnections.SelectedItem == connection)
                 {
-                    lstConnections.SelectedIndex -= 1;
+                    lstConnections.SelectedIndex = Math.Max(-1, lstConnections.SelectedIndex);
                 }
-                ((App)Application.Current).Connections.Remove(connection);
+                ((App)System.Windows.Application.Current).Connections.Remove(connection);
             }
             if (lstConnections.Items.Count == 0)
             {
-                this.Close();
+                //this.Close();
+                // HideWindowState();
             }
+            //Console.WriteLine($"SkipProgram_click: SelectedIndex={lstConnections.SelectedIndex}");
+        }
+
+        public new void Close()
+        {
+            RemoveTempRulesAndNotfyIcon();
+            notifierTrayIcon?.Dispose();
+            base.Close();
         }
 
         private void btnSkipAll_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            lstConnections.SelectedIndex = -1;
+            ((App)System.Windows.Application.Current).Connections.Clear();
+            HideWindowState();
         }
 
         private void expand_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            this.Top = ExpectedTop;
+            //this.Top = ExpectedTop;
+            //this.Left = ExpectedLeft;
 
             if (isDetailsExpanded != expand.IsExpanded)
             {
@@ -352,15 +499,19 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         {
             bool success = false;
             var activeConn = ((CurrentConn)lstConnections.SelectedItem);
+            if (activeConn == null)
+            {
+                return;
+            }
 
-            if ((!_optionsView.IsProtocolChecked) && (_optionsView.IsLocalPortChecked || _optionsView.IsTargetPortChecked))
+            if ((!OptionsView.IsProtocolChecked) && (OptionsView.IsLocalPortChecked || OptionsView.IsTargetPortChecked))
             {
                 MessageBox.Show(Common.Properties.Resources.MSG_RULE_PROTOCOL_NEEDED, Common.Properties.Resources.MSG_DLG_ERR_TITLE, MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             string[] services = null;
-            if (_optionsView.IsServiceRuleChecked)
+            if (OptionsView.IsServiceRuleChecked)
             {
                 if (activeConn.PossibleServices != null && activeConn.PossibleServices.Length > 0)
                 {
@@ -390,9 +541,9 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
             {
                 LogHelper.Info("New rule for connection successfully created!");
 
-                for (int i = ((App)Application.Current).Connections.Count - 1; i >= 0; i--)
+                for (int i = ((App)System.Windows.Application.Current).Connections.Count - 1; i >= 0; i--)
                 {
-                    var c = ((App)Application.Current).Connections[i];
+                    var c = ((App)System.Windows.Application.Current).Connections[i];
                     string[] svc = new string[0];
                     if (!String.IsNullOrEmpty(c.CurrentService))
                     {
@@ -401,14 +552,14 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
                     if (FirewallHelper.GetMatchingRules(c.CurrentPath, c.CurrentAppPkgId, c.Protocol, c.Target, c.TargetPort, c.LocalPort, svc, c.CurrentLocalUserOwner, false).Any()) //FIXME: LocalPort may have multiple!)
                     {
                         LogHelper.Debug("Auto-removing a similar connection...");
-                        ((App)Application.Current).Connections.Remove(c);
+                        ((App)System.Windows.Application.Current).Connections.Remove(c);
                     }
                 }
 
-                if (((App)Application.Current).Connections.Count == 0)
+                if (((App)System.Windows.Application.Current).Connections.Count == 0)
                 {
                     LogHelper.Debug("No connections left; closing notification window.");
-                    this.Close();
+                    HideWindowState();
                 }
             }
             else
@@ -420,52 +571,156 @@ namespace Wokhan.WindowsFirewallNotifier.Notifier.UI.Windows
         private bool createBlockRule(CurrentConn activeConn, string[] services, bool isTemp)
         {
             bool success = false;
-            if (!isTemp)
+            if (Settings.Default.UseBlockRules)
             {
-                if (Settings.Default.UseBlockRules)
+                int Profiles = OptionsView.IsCurrentProfileChecked ? FirewallHelper.GetCurrentProfile() : FirewallHelper.GetGlobalProfile();
+                string ruleName = (isTemp) ? Common.Properties.Resources.RULE_TEMP_PREFIX + activeConn.RuleName : activeConn.RuleName;
+                FirewallHelper.CustomRule newRule = new FirewallHelper.CustomRule(ruleName, activeConn.CurrentPath, OptionsView.IsAppChecked ? activeConn.CurrentAppPkgId : null
+                    , activeConn.CurrentLocalUserOwner, services, OptionsView.IsProtocolChecked ? activeConn.Protocol : -1, OptionsView.IsTargetIPChecked ? activeConn.Target : null
+                    , OptionsView.IsTargetPortChecked ? activeConn.TargetPort : null, OptionsView.IsLocalPortChecked ? activeConn.LocalPort : null, Profiles
+                    , FirewallHelper.CustomRule.CustomRuleAction.B);
+                success = newRule.Apply(isTemp); // does not use RuleManager
+                if (success && isTemp)
                 {
-                    int Profiles = _optionsView.IsCurrentProfileChecked ? FirewallHelper.GetCurrentProfile() : FirewallHelper.GetGlobalProfile();
-                    FirewallHelper.CustomRule newRule = new FirewallHelper.CustomRule(activeConn.RuleName, activeConn.CurrentPath, _optionsView.IsAppChecked ? activeConn.CurrentAppPkgId : null, activeConn.CurrentLocalUserOwner, services, _optionsView.IsProtocolChecked ? activeConn.Protocol : -1, _optionsView.IsTargetIPChecked ? activeConn.Target : null, _optionsView.IsTargetPortChecked ? activeConn.TargetPort : null, _optionsView.IsLocalPortChecked ? activeConn.LocalPort : null, Profiles, "B");
-                    success = newRule.ApplyIndirect(isTemp);
-                    if (!success)
-                    {
-                        MessageBox.Show(Common.Properties.Resources.MSG_RULE_FAILED, Common.Properties.Resources.MSG_DLG_ERR_TITLE, MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    CreateTempRuleNotifyIcon(newRule, FirewallHelper.CustomRule.CustomRuleAction.B);
                 }
-                else
+                if (!success)
                 {
-                    string entry = (!_optionsView.IsServiceRuleChecked || String.IsNullOrEmpty(activeConn.CurrentService) ? activeConn.CurrentPath : activeConn.CurrentService) +
-                                   (_optionsView.IsLocalPortChecked ? ";" + activeConn.LocalPort : ";") +
-                                   (_optionsView.IsTargetIPChecked ? ";" + activeConn.Target : ";") +
-                                   (_optionsView.IsTargetPortChecked ? ";" + activeConn.TargetPort : ";"); //FIXME: Need to add more?
-                    using (StreamWriter sw = new StreamWriter(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "exclusions.set"), true))
-                    {
-                        sw.WriteLine(entry);
-                    }
-
-                    success = true;
+                    MessageBox.Show(Common.Properties.Resources.MSG_RULE_FAILED, Common.Properties.Resources.MSG_DLG_ERR_TITLE, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+            else
+            {
+                // FIXME: Remove and always use Global Rules?
+                throw new ArgumentException("Only global block rules can be used - check options");
+
+                string entry = (!OptionsView.IsServiceRuleChecked || String.IsNullOrEmpty(activeConn.CurrentService) ? activeConn.CurrentPath : activeConn.CurrentService) +
+                               (OptionsView.IsLocalPortChecked ? ";" + activeConn.LocalPort : ";") +
+                               (OptionsView.IsTargetIPChecked ? ";" + activeConn.Target : ";") +
+                               (OptionsView.IsTargetPortChecked ? ";" + activeConn.TargetPort : ";"); //FIXME: Need to add more?
+                using (StreamWriter sw = new StreamWriter(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "exclusions.set"), true))
+                {
+                    sw.WriteLine(entry);
+                }
+
+                success = true;
+            }
+
             return success;
         }
 
         private bool createAllowRule(CurrentConn activeConn, string[] services, bool isTemp)
         {
-            int Profiles = _optionsView.IsCurrentProfileChecked ? FirewallHelper.GetCurrentProfile() : FirewallHelper.GetGlobalProfile();
-            FirewallHelper.CustomRule newRule = new FirewallHelper.CustomRule(activeConn.RuleName, activeConn.CurrentPath, _optionsView.IsAppChecked? activeConn.CurrentAppPkgId : null, activeConn.CurrentLocalUserOwner, services, _optionsView.IsProtocolChecked? activeConn.Protocol : -1, _optionsView.IsTargetIPChecked? activeConn.Target: null, _optionsView.IsTargetPortChecked? activeConn.TargetPort: null, _optionsView.IsLocalPortChecked? activeConn.LocalPort: null, Profiles, "A");
-            return newRule.ApplyIndirect(isTemp);
+            int Profiles = OptionsView.IsCurrentProfileChecked ? FirewallHelper.GetCurrentProfile() : FirewallHelper.GetGlobalProfile();
+            string ruleName = (isTemp) ? Common.Properties.Resources.RULE_TEMP_PREFIX + activeConn.RuleName : activeConn.RuleName;
+            FirewallHelper.CustomRule newRule = new FirewallHelper.CustomRule(ruleName, activeConn.CurrentPath, OptionsView.IsAppChecked ? activeConn.CurrentAppPkgId : null
+                , activeConn.CurrentLocalUserOwner, services, OptionsView.IsProtocolChecked ? activeConn.Protocol : -1, OptionsView.IsTargetIPChecked ? activeConn.Target : null
+                , OptionsView.IsTargetPortChecked ? activeConn.TargetPort : null, OptionsView.IsLocalPortChecked ? activeConn.LocalPort : null, Profiles
+                , FirewallHelper.CustomRule.CustomRuleAction.A);
+
+            bool success = newRule.Apply(isTemp); // does not use RuleManager
+
+            if (success && isTemp)
+            {
+                CreateTempRuleNotifyIcon(newRule, FirewallHelper.CustomRule.CustomRuleAction.A);
+            }
+
+            return success;
+        }
+
+        private static WinForms::NotifyIcon tempNotifyIcon_ = null;
+        private List<FirewallHelper.CustomRule> tempRules_ = new List<FirewallHelper.CustomRule>();
+        private void CreateTempRuleNotifyIcon(FirewallHelper.CustomRule newRule, FirewallHelper.CustomRule.CustomRuleAction ruleAction)
+        {
+            if (!tempRules_.Contains(newRule))
+            {
+                tempRules_.Add(newRule);
+            }
+            if (tempNotifyIcon_ == null)
+            {
+                void iconClick(object sender, EventArgs e)
+                {
+                    if (!RemoveTempRulesAndNotfyIcon())
+                    {
+                        WinForms::MessageBox.Show(Messages.MSG_RULE_RM_FAILED, Messages.MSG_DLG_ERR_TITLE, WinForms::MessageBoxButtons.OK, WinForms::MessageBoxIcon.Error);
+                    }
+                }
+                // tray icon for temporary rule
+                WinForms::NotifyIcon ni = new WinForms::NotifyIcon();
+                ni.Click += new EventHandler(iconClick);
+                // shown in message center on win10
+                ni.BalloonTipIcon = WinForms::ToolTipIcon.Info;
+                ni.BalloonTipTitle = Common.Properties.Resources.RULE_TEMP_TITLE;
+                ni.BalloonTipText = Messages.RULE_TEMP_DESCRIPTION;
+                // tooltip shown on tray icon
+                ni.Text = Messages.RULE_TEMP_DESCRIPTION_SHORT;  // limit 64 chars on win10
+                ni.Icon = new Icon(SystemIcons.Shield, new System.Drawing.Size(16, 16));
+                ni.Visible = true;
+                ni.ShowBalloonTip(2000);
+                ni.Visible = true;
+
+                tempNotifyIcon_ = ni;
+            }
+        }
+
+        private bool RemoveTempRulesAndNotfyIcon()
+        {
+            bool success = true;
+            if (tempRules_.Count > 0)
+            {
+                LogHelper.Info("Now going to remove temporary rule(s)...");
+                tempRules_.ForEach(r =>
+                {
+                    if (!FirewallHelper.RemoveRule(r.Name))
+                    {
+                        success = false;
+                    }
+                });
+            }
+            if (tempNotifyIcon_ != null)
+            {
+                tempNotifyIcon_.Dispose();
+                tempNotifyIcon_ = null;
+            }
+            return success;
         }
 
         private void hlkPath_Navigate(object sender, RequestNavigateEventArgs e)
         {
-            LogHelper.Debug("Calling external program: explorer.exe /select,\"" + e.Uri + "\"");
-            Process.Start("explorer.exe", String.Format("/select,\"{0}\"", e.Uri));
+            ProcessHelper.StartShellExecutable("explorer.exe", String.Format("/select,\"{0}\"", e.Uri), true);
         }
 
         private void hlk_Navigate(object sender, RequestNavigateEventArgs e)
         {
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            ProcessHelper.StartShellExecutable(e.Uri?.AbsoluteUri, null, true);
             e.Handled = true;
+        }
+
+        private void tglButtons_Click(object sender, RoutedEventArgs e)
+        {
+            ChangeAdditionalButtonsVisibility((bool)tglSkip.IsChecked);
+        }
+
+        private void ChangeAdditionalButtonsVisibility(bool isChecked)
+        {
+            // TODO: Allow/Block program?
+            ChangeControlVisibility(isChecked, btnBlockTemp);
+            ChangeControlVisibility(isChecked, btnAllowTemp);
+            ChangeControlVisibility(isChecked, btnSkipProgram);
+            ChangeControlVisibility(isChecked, btnSkipAll);
+        }
+
+        private void ChangeControlVisibility(bool isChecked, Control control)
+        {
+            if (isChecked)
+            {
+                control.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                control.Visibility = Visibility.Collapsed;
+            }
+
         }
     }
 }
